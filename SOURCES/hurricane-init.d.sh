@@ -14,19 +14,17 @@
 . /etc/rc.d/init.d/functions
 
 # Pull in sysconfig settings
-#[ -f /etc/sysconfig/hurricane ] && . /etc/sysconfig/hurricane
+[ -f /etc/sysconfig/hurricane ] && . /etc/sysconfig/hurricane
 
-DAEMON=/bin/hurricane
+DAEMON=/usr/bin/hurricane
+DAEMON_OPTS=$HURRICANE_CONFIG
 NAME=hurricane
 PID_FILE=${PIDFILE:-/var/run/${NAME}/${NAME}.pid}
 LOCK_FILE=${LOCKFILE:-/var/lock/subsys/${NAME}}
-NFILES=${NFILES:-32768}
 
 start() {
     echo -n $"Starting ${NAME}: "
-    mkdir -p $ES_PATH_WORK
-    ulimit -n $NFILES
-    daemon --pidfile=${PID_FILE} --user $ES_USER \
+    daemon --pidfile=${PID_FILE} --user $NAME\
         $DAEMON $DAEMON_OPTS
     RETVAL=$?
     echo

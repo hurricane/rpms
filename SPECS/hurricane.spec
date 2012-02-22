@@ -13,6 +13,7 @@ URL:           http://gethurricane.org
 Source0:        %{name}-%{version}.tar.gz
 Source1:        hurricane-init.d.sh
 Source2:        hurricane-logrotate.conf
+Source3:        sysconfig-hurricane.conf
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Requires:       erlang
@@ -41,13 +42,17 @@ mkdir -p %{buildroot}/%{_bindir}
 %{__mkdir} -p %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -D -m 644 examples/example.config %{buildroot}%{_sysconfdir}/%{name}/example.config
 
+# init
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/rc.d/init.d
+%{__install} -m 755 %{SOURCE1} %{buildroot}%{_sysconfdir}/rc.d/init.d/%{name}
+
 # logs
 %{__mkdir} -p %{buildroot}%{_localstatedir}/log/%{name}
 %{__install} -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
 
-# init
-%{__mkdir} -p %{buildroot}%{_sysconfdir}/rc.d/init.d
-%{__install} -m 755 %{SOURCE1} %{buildroot}%{_sysconfdir}/rc.d/init.d/%{name}
+# sysconfig
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/sysconfig
+%{__install} -m 755 %{SOURCE3} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 
 %{__mkdir} -p %{buildroot}%{_localstatedir}/run/%{name}
 %{__mkdir} -p %{buildroot}%{_localstatedir}/lock/subsys/%{name}
@@ -62,6 +67,7 @@ rm -rf %{buildroot}
 %{_bindir}/%{name}
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/*
+%config(noreplace) %{_sysconfdir}/sysconfig/%{name}
 %{_sysconfdir}/rc.d/init.d/%{name}
 %dir %{_localstatedir}/run/%{name}
 %dir %{_localstatedir}/lock/subsys/%{name}
