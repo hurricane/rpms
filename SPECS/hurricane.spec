@@ -1,16 +1,26 @@
 Name:           hurricane
-Version:        0.2.1
+Version:        0.2.2
 Release:        1%{?dist}
 Summary:        A scalable, extensible, distributed messaging system. 
 
-Group:      
+Group:          System Environment/Daemons
 License:        BSD      
 URL:           http://gethurricane.org 
-Source0:       https://github.com/icheishvili/hurricane/tarball/v%{version}
+# The tarball comes from here:
+# http://github.com/%{name}/%{name}/tarball/v%{version}
+# GitHub has layers of redirection and renames that make this a troublesome
+# URL to include directly.
+Source0:        %{name}-%{version}.tar.gz
+Source1:        hurricane-init.d.sh
+Source2:        hurricane-logrotate.conf
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 Requires:       erlang
 Requires:       erlang-mochiweb 
+
+Requires(post): chkconfig initscripts
+Requires(pre):  chkconfig initscripts
+Requires(pre):  shadow-utils
 
 %description
 A scalable, extensible, distributed messaging system.
@@ -19,20 +29,44 @@ A scalable, extensible, distributed messaging system.
 %setup -q
 
 %build
-%configure
-make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
-make install DESTDIR=%{buildroot}
+mkdir -p %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}
+%{__install} -p -m 644 erl_modules/* %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/
+mkdir -p %{buildroot}/%{_bindir}
+%{__install} -p -m 755 run.escript %{buildroot}%{_bindir}/%{name}
+
+# Sample configs
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/%{name}
+%{__install} -D -m 644 examples/example.config %{buildroot}%{_sysconfdir}/%{name}/example.config
+
+# logs
+%{__mkdir} -p %{buildroot}%{_localstatedir}/log/%{name}
+%{__install} -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
+
+# init
+%{__mkdir} -p %{buildroot}%{_sysconfdir}/rc.d/init.d
+%{__install} -m 755 %{SOURCE1} %{buildroot}%{_sysconfdir}/rc.d/init.d/%{name}
+
+%{__mkdir} -p %{buildroot}%{_localstatedir}/run/%{name}
+%{__mkdir} -p %{buildroot}%{_localstatedir}/lock/subsys/%{name}
 
 %clean
 rm -rf %{buildroot}
 
-
 %files
 %defattr(-,root,root,-)
-%doc
+%dir %{_libdir}/erlang/lib/%{name}-%{version}
+%{_libdir}/erlang/lib/%{name}-%{version}/*
+%{_bindir}/%{name}
+%dir %{_sysconfdir}/%{name}
+%dir %{_sysconfdir}/%{name}/*
+%{_sysconfdir}/rc.d/init.d/%{name}
+%dir %{_localstatedir}/run/%{name}
+%dir %{_localstatedir}/lock/subsys/%{name}
+%{_sysconfdir}/logrotate.d/%{name}
+%doc README.markdown
 
 %post
 /sbin/chkconfig --add hurricane
@@ -58,5 +92,5 @@ fi
 
 
 %changelog
-* Tue Feb 21 2012 Tavis Aitken <tavisto@tavisto.net> - 0.2.1-1
+* Tue Feb 21 2012 Tavis Aitken <tavisto@tavisto.net> - 0.2.2-1
 - Initial package
