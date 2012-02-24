@@ -1,11 +1,11 @@
 Name:           hurricane
-Version:        0.2.2
+Version:        0.2.3
 Release:        1%{?dist}
 Summary:        A scalable, extensible, distributed messaging system. 
 
 Group:          System Environment/Daemons
-License:        BSD      
-URL:           http://gethurricane.org 
+License:        BSD
+URL:           http://gethurricane.org
 # The tarball comes from here:
 # http://github.com/%{name}/%{name}/tarball/v%{version}
 # GitHub has layers of redirection and renames that make this a troublesome
@@ -16,8 +16,9 @@ Source2:        hurricane-logrotate.conf
 Source3:        sysconfig-hurricane.conf
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+BuildRequires:  erlang
 Requires:       erlang
-Requires:       erlang-mochiweb 
+Requires:       erlang-mochiweb
 
 Requires(post): chkconfig initscripts
 Requires(pre):  chkconfig initscripts
@@ -26,15 +27,30 @@ Requires(pre):  shadow-utils
 %description
 A scalable, extensible, distributed messaging system.
 
+%package devel
+BuildArch:  noarch
+Summary:    Source files for development
+
+%description devel
+Source files for development
+
+
 %prep
 %setup -q
 
 %build
+make all
 
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}
-%{__install} -p -m 644 erl_modules/* %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/
+mkdir -p %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/ebin
+%{__install} -p -m 644 ebin/* %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/ebin/
+
+# Source for devel
+mkdir -p %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/src
+%{__install} -p -m 644 erl_modules/* %{buildroot}/%{_libdir}/erlang/lib/%{name}-%{version}/src/
+
 mkdir -p %{buildroot}/%{_bindir}
 %{__install} -p -m 755 run.escript %{buildroot}%{_bindir}/%{name}
 
@@ -55,7 +71,6 @@ mkdir -p %{buildroot}/%{_bindir}
 %{__install} -m 755 %{SOURCE3} %{buildroot}%{_sysconfdir}/sysconfig/%{name}
 
 %{__mkdir} -p %{buildroot}%{_localstatedir}/run/%{name}
-%{__mkdir} -p %{buildroot}%{_localstatedir}/lock/subsys/%{name}
 
 %clean
 rm -rf %{buildroot}
@@ -63,16 +78,21 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %dir %{_libdir}/erlang/lib/%{name}-%{version}
-%{_libdir}/erlang/lib/%{name}-%{version}/*
+%dir %{_libdir}/erlang/lib/%{name}-%{version}/ebin
+%{_libdir}/erlang/lib/%{name}-%{version}/ebin/*
 %{_bindir}/%{name}
 %dir %{_sysconfdir}/%{name}
 %dir %{_sysconfdir}/%{name}/*
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}
 %{_sysconfdir}/rc.d/init.d/%{name}
 %dir %{_localstatedir}/run/%{name}
-%dir %{_localstatedir}/lock/subsys/%{name}
 %{_sysconfdir}/logrotate.d/%{name}
 %doc README.markdown
+
+%files devel
+%dir %{_libdir}/erlang/lib/%{name}-%{version}/src/
+%{_libdir}/erlang/lib/%{name}-%{version}/src/*
+
 
 %post
 /sbin/chkconfig --add hurricane
@@ -98,5 +118,8 @@ fi
 
 
 %changelog
+* Thu Feb 23 2012 tavisto@tavisto.net 0.2.3-1
+- Added make file to ship only .beam files and added a devel subpackage for the source files.
+
 * Tue Feb 21 2012 Tavis Aitken <tavisto@tavisto.net> - 0.2.2-1
 - Initial package
